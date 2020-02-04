@@ -1,0 +1,14 @@
+# track this file .gitignore (i.e. do NOT ignore it)
+!.gitignore
+!.gitkeep
+
+# data files
+data/logs/nginx/*.log
+
+# docker data files
+sql
+!sql/Ω_post_process.sql
+!sql/Ω_test.sql
+!sql/.gitkeep
+
+

@@ -1,0 +1,128 @@
+version: '3.7'
+
+################################################################################
+# Database notes
+#  * any sql in the ./sql folder will be imported
+#  * to reimport sql from ./sql, delete persistent volume `docker-compose down -v`
+#  * there is a "_post_processing.sql" file in /sql that add local specific entries
+#    -the address must be changes if using a different port than the default (3000)
+
+services:
+
+  mysql:
+    container_name: om_mysql
+    image: mariadb:${MARIADB_VERSION:-latest}
+    restart: always
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_USER:          ${MYSQL_USER:-user}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-password}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE:-wordpress}
+
+  # app:
+  #   container_name: om_app
+  #   depends_on:
+  #     - mysql
+  #   links:
+  #     - mysql:om_mysql
+  #   image: om_app
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     args:
+  #       buildno: 1
+  #       gitcommithash: cdc3b19
+  #   volumes:
+  #     - ./onemission/public:/var/www/html
+  #     # - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/html
+
+  wordpress:
+    container_name: om_wordpress
+    # image: wordpress:${WORDPRESS_VERSION:-php7.3-fpm}
+    image: w3media/php73-fpm:latest
+    depends_on:
+      - mysql
+    links:
+      - mysql:om_mysql
+    restart: always
+    environment:
+      WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
+      WORDPRESS_DEBUG:        ${WORDPRESS_DEBUG:-0}
+      WORDPRESS_DB_HOST:      ${WORDPRESS_DB_HOST:-mysql}
+      WORDPRESS_DB_NAME:      ${MYSQL_DATABASE:-wordpress}
+      WORDPRESS_DB_USER:      ${MYSQL_USER:-wp_user}
+      WORDPRESS_DB_PASSWORD:  ${MYSQL_PASSWORD:-password}
+      FORCE_SSL_ADMIN:        "false"
+      FORCE_SSL_LOGIN:        "false"
+    volumes:
+      - ./onemission/public:/var/www/html
+      # - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/html
+      # - ../public/content/plugins:/var/www/html/wp-content/plugins
+      # - ../public/content/mu-plugins:/var/www/html/wp-content/mu-plugins
+      # - ../public/content/themes:/var/www/html/wp-content/themes
+
+
+  nginx:
+    container_name: om_nginx
+    image: nginx:${NGINX_VERSION:-latest}
+    ports:
+      - ${WORDPRESS_PORT:-8080}:80
+      - 443:443
+    depends_on:
+      - wordpress
+    volumes:
+      - ${NGINX_CONF_DIR:-./nginx}:/etc/nginx/conf.d
+      - ${NGINX_LOG_DIR:-./logs/nginx}:/var/log/nginx
+      - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/html
+      - ${SSL_CERTS_DIR:-./certs}:/etc/letsencrypt
+      - ${SSL_CERTS_DATA_DIR:-./certs-data}:/data/letsencrypt
+    restart: always
+
+  #
+  # phpmyadmin:
+  #   build:
+  #     context: ../
+  #   container_name: om_phpmyadmin
+  #   image: phpmyadmin/phpmyadmin
+  #   links:
+  #     - mysql:om_mysql
+  #   ports:
+  #     - ${PHPMYADMIN_PORT:-8000}:80
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_PORT: 3306
+  #     MYSQL_USER: ${MYSQL_USER:-root}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+
+
+  # certbot:
+  #   depends_on:
+  #     - nginx
+  #   image: certbot/certbot
+  #   container_name: om_certbot
+  #   volumes:
+  #     - ${SSL_CERTS_DIR:-./certs}:/etc/letsencrypt
+  #     - ${WORDPRESS_DATA_DIR}:/var/www/html
+  #   command: certonly --webroot --webroot-path=/var/www/html --email ${SSL_CERT_EMAIL:-user@example.com} --agree-tos --no-eff-email --staging -d ${SSL_DOMAIN} -d www.${SSL_DOMAIN}
+
+  # wp-cli:
+  #   image: wordpress:cli-${WP_CLI_VERSION:-2.2.0}-php${PHP_VERSION:-7.3}
+  #   environment:
+  #     APACHE_RUN_USER: www-data
+  #     APACHE_RUN_GROUP: www-data
+  #   depends_on:
+  #     - mysql
+  #     - wordpress
+  #   volumes:
+  #     - ./wordpress:/var/www/html:rw
+  #     # - ./bin/install-wp.sh:/usr/local/bin/install-wp:ro
+  #     # - .:/var/www/html/wp-content/plugins/my-plugin:ro
+  #
+
+volumes:
+  db_data:
