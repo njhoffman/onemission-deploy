@@ -5,6 +5,9 @@
 # data files
 data/logs/nginx/*.log
 
+# onemission submodule
+onemission/
+
 # docker data files
 sql
 !sql/Ω_post_process.sql
