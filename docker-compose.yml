@@ -51,14 +51,8 @@ services:
       - mysql:om_mysql
     restart: always
     environment:
-      WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
       WORDPRESS_DEBUG:        ${WORDPRESS_DEBUG:-0}
       WORDPRESS_DB_HOST:      ${WORDPRESS_DB_HOST:-mysql}
-      WORDPRESS_DB_NAME:      ${MYSQL_DATABASE:-wordpress}
-      WORDPRESS_DB_USER:      ${MYSQL_USER:-wp_user}
-      WORDPRESS_DB_PASSWORD:  ${MYSQL_PASSWORD:-password}
-      FORCE_SSL_ADMIN:        "false"
-      FORCE_SSL_LOGIN:        "false"
     volumes:
       - ./onemission:/var/www
       # - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/html
@@ -80,21 +74,19 @@ services:
       - ${SSL_CERTS_DATA_DIR:-./certs-data}:/data/letsencrypt
     restart: always
 
-  #
-  # phpmyadmin:
-  #   build:
-  #     context: ../
-  #   container_name: om_phpmyadmin
-  #   image: phpmyadmin/phpmyadmin
-  #   links:
-  #     - mysql:om_mysql
-  #   ports:
-  #     - ${PHPMYADMIN_PORT:-8000}:80
-  #   environment:
-  #     PMA_HOST: mysql
-  #     PMA_PORT: 3306
-  #     MYSQL_USER: ${MYSQL_USER:-root}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+
+  phpmyadmin:
+    container_name: om_phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    links:
+      - mysql:om_mysql
+    ports:
+      - ${PHPMYADMIN_PORT:-8000}:80
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
 
 
   # certbot:
