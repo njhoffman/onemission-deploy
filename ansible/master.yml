@@ -1,0 +1,6 @@
+---
+- name: sync stage
+- name: sync local
+- name: deploy stage
+- name: deploy live
+

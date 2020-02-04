@@ -1,0 +1,6 @@
+[kinsta_servers]
+kinsta ansible_host=34.70.95.137 ansible_port=28355 ansible_user=onemission
+kinsta-stage ansible_host=34.70.95.137 ansible_port=58824 ansible_user=onemission
+
+[database:children]
+kinsta_servers

@@ -2,6 +2,9 @@
 !.gitignore
 !.gitkeep
 
+.env
+!.env.example
+
 # data files
 data/logs/nginx/*.log
 

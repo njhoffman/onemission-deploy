@@ -24,23 +24,6 @@ services:
       MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-password}
       MYSQL_DATABASE:      ${MYSQL_DATABASE:-wordpress}
 
-  # app:
-  #   container_name: om_app
-  #   depends_on:
-  #     - mysql
-  #   links:
-  #     - mysql:om_mysql
-  #   image: om_app
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       buildno: 1
-  #       gitcommithash: cdc3b19
-  #   volumes:
-  #     - ./onemission/public:/var/www/html
-  #     # - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/html
-
   wordpress:
     container_name: om_wordpress
     # image: wordpress:${WORDPRESS_VERSION:-php7.3-fpm}
@@ -55,8 +38,6 @@ services:
       WORDPRESS_DB_HOST:      ${WORDPRESS_DB_HOST:-mysql}
     volumes:
       - ./onemission:/var/www
-      # - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/html
-
 
   nginx:
     container_name: om_nginx
@@ -69,11 +50,10 @@ services:
     volumes:
       - ${NGINX_CONF_DIR:-./nginx}:/etc/nginx/conf.d
       - ${NGINX_LOG_DIR:-./logs/nginx}:/var/log/nginx
-      - ${WORDPRESS_DATA_DIR:-./wordpress}:/var/www/public
       - ${SSL_CERTS_DIR:-./certs}:/etc/letsencrypt
       - ${SSL_CERTS_DATA_DIR:-./certs-data}:/data/letsencrypt
+      - ./onemission:/var/www
     restart: always
-
 
   phpmyadmin:
     container_name: om_phpmyadmin
@@ -88,6 +68,18 @@ services:
       MYSQL_USER: ${MYSQL_USER:-root}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
 
+  wp-cli:
+    image: wordpress:cli-${WP_CLI_VERSION:-2.2.0}-php${PHP_VERSION:-7.3}
+    environment:
+      APACHE_RUN_USER: www-data
+      APACHE_RUN_GROUP: www-data
+    depends_on:
+      - mysql
+      - wordpress
+    volumes:
+      - ./onemission/public:/var/www/public:rw
+      # - ./bin/install-wp.sh:/usr/local/bin/install-wp:ro
+      # - .:/var/www/html/wp-content/plugins/my-plugin:ro
 
   # certbot:
   #   depends_on:
@@ -98,20 +90,6 @@ services:
   #     - ${SSL_CERTS_DIR:-./certs}:/etc/letsencrypt
   #     - ${WORDPRESS_DATA_DIR}:/var/www/html
   #   command: certonly --webroot --webroot-path=/var/www/html --email ${SSL_CERT_EMAIL:-user@example.com} --agree-tos --no-eff-email --staging -d ${SSL_DOMAIN} -d www.${SSL_DOMAIN}
-
-  # wp-cli:
-  #   image: wordpress:cli-${WP_CLI_VERSION:-2.2.0}-php${PHP_VERSION:-7.3}
-  #   environment:
-  #     APACHE_RUN_USER: www-data
-  #     APACHE_RUN_GROUP: www-data
-  #   depends_on:
-  #     - mysql
-  #     - wordpress
-  #   volumes:
-  #     - ./wordpress:/var/www/html:rw
-  #     # - ./bin/install-wp.sh:/usr/local/bin/install-wp:ro
-  #     # - .:/var/www/html/wp-content/plugins/my-plugin:ro
-  #
 
 volumes:
   db_data:

@@ -1,0 +1,54 @@
+---
+- name: backup mysql from live server
+  hosts: kinsta
+  vars:
+    - db_dump_live: /tmp/db_dump
+    - db_dump_stage: /tmp/db_dump
+    - db_exclude:
+      - "Database"
+      - "information_schema"
+      - "performance_schema"
+      - "mysql"
+  tasks:
+    - name: get db names
+      shell: 'mysql -u {{ db_user }} -p{{ db_password }} -e "show databases;" '
+      register: dblist
+    - name: make live dump directory '{{ db_dump_live }}'
+      file:
+        path: "{{ db_dump_live }}"
+        state: directory
+        mode: 0755
+    - name: dump live databases
+      mysql_db:
+        state: dump
+        name: "{{ item }}"
+        target: "{{ db_dump_live }}/{{ item }}.sql"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+      with_items: "{{ dblist.stdout_lines | difference(db_exclude) }}"
+    - name: make staging dump directory '{{ db_dump_stage }}'
+      delegate_to: kinsta-stage
+      file:
+        path: "{{ db_dump_stage }}"
+        state: directory
+        mode: 0755
+    - name: copy the database to staging site
+      synchronize:
+        src: "{{ db_dump_live }}"
+        dest: "{{ db_dump_stage }}"
+      delegate_to: kinsta-stage
+    - name: remove live database dumps
+      file:
+        path: "{{ db_dump_live }}"
+        state: absent
+    # - name: copy the database to the development server
+    #   raw: rsync /var/www/html/wordpress.sql root@192.168.0.69:/home/vagrant/wordpress.sql
+    # - name: import the database
+    #   mysql_db:
+    #     name: wordpress
+    #     state: import
+    #     target: /home/vagrant/wordpress.sql
+    #     login_host: 192.168.0.69
+    #     login_user: root
+    #     login_password: '123456'
+    #   delegate_to: neo_development

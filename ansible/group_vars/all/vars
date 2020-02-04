@@ -1,0 +1,6 @@
+---
+# nonsensitive data
+db_user: onemission
+
+# sensitive data
+db_password: "{{ vault_db_password }}"

@@ -1,0 +1,35 @@
+---
+- name: backup mysql from live server
+  hosts: kinsta
+  vars:
+    - db_dump_remote: /tmp/db_dump
+    - db_dump_local: ../sql
+    - db_exclude:
+      - "Database"
+      - "information_schema"
+      - "performance_schema"
+      - "mysql"
+  tasks:
+    - name: get db names
+      shell: 'mysql -u {{ db_user }} -p{{ db_password }} -e "show databases;" '
+      register: dblist
+    - name: make remote dump directory '{{ db_dump_remote }}'
+      file:
+        path: "{{ db_dump_remote }}"
+        state: directory
+        mode: 0755
+    - name: dump databases to remote destination
+      mysql_db:
+        state: dump
+        name: "{{ item }}"
+        target: "{{ db_dump_remote }}/{{ item }}.sql"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+      with_items: "{{ dblist.stdout_lines | difference(db_exclude) }}"
+    - name: copy the database to local '{{ db_dump_local }}'
+      synchronize:  src={{ db_dump_remote }}/{{ item }}.sql dest={{ db_dump_local }} mode=pull
+      with_items: "{{ dblist.stdout_lines | difference(db_exclude) }}"
+    - name: remove remote database dumps
+      file:
+        path: "{{ db_dump_remote }}"
+        state: absent
