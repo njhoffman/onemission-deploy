@@ -1,36 +1,41 @@
-# Running locally in docker
+## Deployment Requirements
 
-Download and install docker
-Clone this repo with associated onemission submodule
+To run onemission locally or use any of the deployment scripts the following requirements must be met:
 
-Copy wp-bootstrap-config.sample.php to wp-bootstrap-config.php
+- [Download and install docker](https://docs.docker.com/install)
+- [Download and install docker-compose](https://docs.docker.com/compose/install/)
+- [Download and install ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
-Install latest wordpress version into onemission repo:
-onemission/install.sh
+## Running Locally
 
-## Pushing to staging
+Quick start:
 
-## Installing manually into a production site
+```
+# Clone this repo with onemission submodule
+git clone git@github.com/njhoffman/onemission-deploy.git
+# cp bootstrap file, install wordpress core and launch docker containers
+cd onemission && cp wp-bootstrap-config.sample.php wp-bootstrap-config.php && ./install.sh
+cd .. && ./start.sh
+```
 
-Element Markdown Syntax
-Heading # H1
+For more details visit the [Running Locally](docs/Running-Locally.md) page.
 
-## H2
+## Deployment Scripts
 
-### H3
+Quick start:
 
-Bold **bold text**
-Italic _italicized text_
-Blockquote > blockquote
-Ordered List 1. First item
+```
+# IMPORTANT: get vault password from Nick or John to access secret keys, export as env variable
+export VAULT_PASSWORD="insert_password"
+# Automation scripts are ran with ansible-playbook.
+ansible-playbook <name>
+```
 
-2. Second item
-3. Third item
-   Unordered List - First item
+The following playbook names are available:
 
-- Second item
-- Third item
-  Code `code`
-  Horizontal Rule ---
-  Link [title](https://www.example.com)
-  Image ![alt text](image.jpg)
+- sync-local: dumps the live database into the local ./sql folder for importing into mysql docker container
+- sync-stage: transfers live database and imports into staging site, transfers all files in uploades folder to staging site
+- deploy-stage: triggers the staging site to pull from the repo updating to the latest version
+- deploy-live: triggers the live site to pull from the repo updating to the latest version
+
+For more details visit the [Ansible Playbooks](docs/Ansible-Playbooks.md) page.

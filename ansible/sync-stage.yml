@@ -1,9 +1,7 @@
 ---
-- name: backup mysql from live server
+- name: dump mysql database from live server
   hosts: kinsta
   vars:
-    - db_dump_live: /tmp/db_dump
-    - db_dump_stage: /tmp/db_dump
     - db_exclude:
       - "Database"
       - "information_schema"
@@ -26,21 +24,28 @@
         login_user: "{{ db_user }}"
         login_password: "{{ db_password }}"
       with_items: "{{ dblist.stdout_lines | difference(db_exclude) }}"
+
+- name: transfer sql to staging site
+  hosts: kinsta-stage
+  tasks:
     - name: make staging dump directory '{{ db_dump_stage }}'
-      delegate_to: kinsta-stage
       file:
         path: "{{ db_dump_stage }}"
         state: directory
         mode: 0755
     - name: copy the database to staging site
+      delegate_to: kinsta
       synchronize:
         src: "{{ db_dump_live }}"
-        dest: "{{ db_dump_stage }}"
-      delegate_to: kinsta-stage
-    - name: remove live database dumps
-      file:
-        path: "{{ db_dump_live }}"
-        state: absent
+        # hostvars[inventory_hostname].ansible_ssh_host
+        dest: "rsync://34.70.95.137:{{ db_dump_stage }}"
+        recursive: yes
+        rsync_opts:
+          - "-e ssh -p 58824"
+    # - name: remove live database dumps
+    #   file:
+    #     path: "{{ db_dump_live }}"
+    #     state: absent
     # - name: copy the database to the development server
     #   raw: rsync /var/www/html/wordpress.sql root@192.168.0.69:/home/vagrant/wordpress.sql
     # - name: import the database

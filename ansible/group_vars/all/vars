@@ -1,6 +1,8 @@
 ---
 # nonsensitive data
 db_user: onemission
+db_dump_live: /tmp/db_dump
+db_dump_stage: /tmp/db_dump
 
 # sensitive data
 db_password: "{{ vault_db_password }}"
