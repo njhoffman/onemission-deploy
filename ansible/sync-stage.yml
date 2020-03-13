@@ -38,7 +38,7 @@
       synchronize:
         src: "{{ db_dump_live }}"
         # hostvars[inventory_hostname].ansible_ssh_host
-        dest: "rsync://34.70.95.137:{{ db_dump_stage }}"
+        dest: "{{ db_dump_stage }}/.."
         recursive: yes
         rsync_opts:
           - "-e ssh -p 58824"
