@@ -1,0 +1,8 @@
+FROM w3media/php73-fpm:latest
+
+# wordpress:${WORDPRESS_VERSION:-php7.3-fpm}
+
+# initialization script to setup logging files
+COPY docker-entrypoint.sh /usr/local/bin
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["supervisord"]

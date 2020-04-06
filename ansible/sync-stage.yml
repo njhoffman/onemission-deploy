@@ -46,8 +46,6 @@
     #   file:
     #     path: "{{ db_dump_live }}"
     #     state: absent
-    # - name: copy the database to the development server
-    #   raw: rsync /var/www/html/wordpress.sql root@192.168.0.69:/home/vagrant/wordpress.sql
     # - name: import the database
     #   mysql_db:
     #     name: wordpress
@@ -57,3 +55,6 @@
     #     login_user: root
     #     login_password: '123456'
     #   delegate_to: neo_development
+    #  - name: apply staging-only db changes
+    #    turn query monitor on
+    #  - name: copy uploads to staging site

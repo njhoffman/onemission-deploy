@@ -12,22 +12,24 @@ services:
   mysql:
     container_name: om_mysql
     image: mariadb:${MARIADB_VERSION:-latest}
-    restart: always
-    volumes:
-      - ./sql:/docker-entrypoint-initdb.d
-      - db_data:/var/lib/mysql
     ports:
       - 3306:3306
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
       MYSQL_USER:          ${MYSQL_USER:-user}
       MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-password}
       MYSQL_DATABASE:      ${MYSQL_DATABASE:-wordpress}
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
 
   wordpress:
     container_name: om_wordpress
-    # image: wordpress:${WORDPRESS_VERSION:-php7.3-fpm}
-    image: w3media/php73-fpm:latest
+    image: om_wordpress
+    build:
+      dockerfile: Dockerfile-wordpress
+      context: ./
     depends_on:
       - mysql
     links:
@@ -38,6 +40,8 @@ services:
       WORDPRESS_DB_HOST:      ${WORDPRESS_DB_HOST:-mysql}
     volumes:
       - ./onemission:/var/www
+      - ${PHP_CONF_DIR-./config/php-fpm}:/usr/local/etc/php-fpm.d
+      - ${PHP_LOG_DIR:-./logs/php-fpm}:/usr/local/var/log/php-fpm
 
   nginx:
     container_name: om_nginx
@@ -47,13 +51,12 @@ services:
       - 443:443
     depends_on:
       - wordpress
+    restart: always
     volumes:
-      - ${NGINX_CONF_DIR:-./nginx}:/etc/nginx/conf.d
+      - ${NGINX_CONF_DIR:-./config/nginx}:/etc/nginx/conf.d
       - ${NGINX_LOG_DIR:-./logs/nginx}:/var/log/nginx
       - ${SSL_CERTS_DIR:-./certs}:/etc/letsencrypt
       - ${SSL_CERTS_DATA_DIR:-./certs-data}:/data/letsencrypt
-      - ./onemission:/var/www
-    restart: always
 
   phpmyadmin:
     container_name: om_phpmyadmin
